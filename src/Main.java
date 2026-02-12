@@ -1,17 +1,55 @@
-//TIP To <b>Run</b> code, press <shortcut actionId="Run"/> or
-// click the <icon src="AllIcons.Actions.Execute"/> icon in the gutter.
-void main() {
-    //TIP Press <shortcut actionId="ShowIntentionActions"/> with your caret at the highlighted text
-    // to see how IntelliJ IDEA suggests fixing it.
-    IO.println(String.format("Hello and welcome!"));
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
-    for (int i = 1; i <= 5; i++) {
-        //TIP Press <shortcut actionId="Debug"/> to start debugging your code. We have set one <icon src="AllIcons.Debugger.Db_set_breakpoint"/> breakpoint
-        // for you, but you can always add more by pressing <shortcut actionId="ToggleLineBreakpoint"/>.
-        IO.println("i = " + i);
+public class UsernameService {
 
+    private final ConcurrentHashMap<String, Integer> users = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, AtomicInteger> attemptFrequency = new ConcurrentHashMap<>();
+
+    public boolean checkAvailability(String username) {
+        attemptFrequency
+                .computeIfAbsent(username, k -> new AtomicInteger(0))
+                .incrementAndGet();
+        return !users.containsKey(username);
     }
-    System.out.println("Hello");
-    System.out.println("Hello");
 
+    public void register(String username, int userId) {
+        users.put(username, userId);
+    }
+
+    public List<String> suggestAlternatives(String username) {
+        List<String> suggestions = new ArrayList<>();
+        int counter = 1;
+
+        while (suggestions.size() < 3) {
+            String candidate = username + counter;
+            if (!users.containsKey(candidate)) {
+                suggestions.add(candidate);
+            }
+            counter++;
+        }
+
+        String dotted = username.replace("_", ".");
+        if (!users.containsKey(dotted)) {
+            suggestions.add(dotted);
+        }
+
+        return suggestions;
+    }
+
+    public String getMostAttempted() {
+        String maxUser = null;
+        int maxCount = 0;
+
+        for (Map.Entry<String, AtomicInteger> entry : attemptFrequency.entrySet()) {
+            int count = entry.getValue().get();
+            if (count > maxCount) {
+                maxCount = count;
+                maxUser = entry.getKey();
+            }
+        }
+
+        return maxUser;
+    }
 }
